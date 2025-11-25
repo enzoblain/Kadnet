@@ -1,20 +1,28 @@
 # Kadnet
 
 [![Rust](https://img.shields.io/badge/Rust-1.91-orange?logo=rust)](https://www.rust-lang.org/)
-[![Docs](https://img.shields.io/badge/docs-docs.rs-blue)](https://docs.rs/kadnet)
-[![Crates.io](https://img.shields.io/crates/v/kadnet)](https://crates.io/crates/kadnet)
+[![Workspace](https://img.shields.io/badge/Cargo-Workspace-blue)]()
+[![Docs](https://img.shields.io/badge/docs-docs.rs-blue)](https://docs.rs/kadnet-sdk)
+[![Crates.io](https://img.shields.io/crates/v/kadnet)](https://crates.io/crates/kadnet-sdk)
 [![License](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 
 ---
 
-**Kadnet** is a **pure-Rust implementation** of the **Kademlia P2P Distributed Hash Table (DHT)** — built for **speed**, **safety**, and **scalability**.  
-It combines asynchronous networking with SIMD-optimized and optionally parallel routing operations to deliver fast and efficient peer discovery in decentralized systems.
+**Kadnet** is a **Rust workspace** implementing a modern, modular version of the  
+**Kademlia P2P Distributed Hash Table (DHT)** — built for **speed**, **safety**, and **scalability**.
 
-Kadnet aims to be a **modern, production-ready foundation** for distributed networks, decentralized storage, and peer-to-peer communication protocols.
+The workspace is organized into three crates:
+
+- **`core/`** — low-level engine (routing table, XOR distance, protocol, networking)  
+- **`sdk/`** — high-level developer-friendly API  
+- **`client/`** — CLI / example node using the SDK  
+
+Kadnet aims to be a **production-ready foundation** for decentralized networks,  
+distributed storage, and P2P communication protocols.
 
 ---
 
-### 🧭 Project Status
+## 🧭 Project Status
 
 🚧 **Work in Progress**  
 - Core networking and routing table logic are under active development.  
@@ -22,88 +30,118 @@ Kadnet aims to be a **modern, production-ready foundation** for distributed netw
 
 ---
 
-### ✨ Key Features
+## ✨ Key Features
 
-- 🦀 **Pure Rust** — idiomatic, memory-safe, and dependency-light.  
-- 🌐 **P2P Networking** — peer discovery, node lookup, and message routing via Kademlia.  
-- ⚡ **SIMD Optimization** — accelerate hash and XOR distance calculations.  
-- 🧵 **Parallel Processing (optional)** — leverage multicore systems for large-scale DHT operations.  
-- ✅ **Comprehensive Testing** — unit, integration, and property-based coverage.  
-- 📚 **Well-Documented** — clean examples and guides on [docs.rs](https://docs.rs/kadnet).  
+- 🦀 **Pure Rust** — idiomatic, memory-safe, dependency-light  
+- 🌐 **P2P Networking** — Kademlia node discovery & message routing  
+- ⚡ **SIMD Optimization** — accelerated XOR-distance calculations  
+- 🧵 **Optional Parallelism** — multi-core accelerated search  
+- 🧪 **Extensive Testing** — unit, integration, and property-based tests  
+- 📚 **Well-Documented Architecture** — high-level docs in `docs/`  
 
 ---
 
-### 🚀 Installation (coming soon)
+## 📦 Installation
 
-Once published, add **Kadnet** to your `Cargo.toml`:
+Kadnet is a *multi-crate workspace*.  
+Developers will typically depend on the **SDK crate**:
 
 ``` toml
 [dependencies]
-kadnet = "0.1"
+kadnet-sdk = { path = "sdk" }
 ```
 
-To enable optional parallelism:
+Once published on crates.io:
 
 ``` toml
-kadnet = { version = "0.1", features = ["parallel"] }
+[dependencies]
+kadnet-sdk = "0.1"
+```
+
+Optional features:
+
+``` toml
+kadnet-sdk = { version = "0.1", features = ["parallel"] }
+```
+
+The low-level `kadnet-core` crate is **not intended** for direct use  
+(except for advanced internal integrations).
+
+---
+
+## 📂 Workspace Structure
+
+```
+kadnet/
+│
+├── core/        # Low-level Kademlia engine
+│── sdk/         # Developer-facing API
+└── client/      # CLI / example node
 ```
 
 ---
 
-### 📂 Examples (planned)
+## 🧪 Examples (planned)
 
-Examples will be added under `examples/` as the implementation matures:
+Examples will be provided under `examples/` or inside the `client/` crate.
 
-| Example         | Description                                         |
+| Example          | Description                                         |
 |------------------|-----------------------------------------------------|
-| `basic.rs`       | Minimal Kademlia DHT example.                      |
-| `network.rs`     | Demonstrates peer discovery and async networking.  |
-| `parallel.rs`    | Shows SIMD and parallel processing in lookups.     |
+| `basic.rs`       | Minimal DHT example via the SDK                     |
+| `network.rs`     | Peer discovery & async networking                   |
+| `parallel.rs`    | SIMD + parallel accelerated lookups                 |
 
-Run examples via:
+Run examples:
 
 ``` bash
 cargo run --example <example_name>
 ```
 
----
+Or run the client directly:
 
-### 📖 Documentation
-
-Full API documentation will be published on **[docs.rs/kadnet](https://docs.rs/kadnet)**.  
-Early design notes, protocol details, and architecture discussions can be found in the `docs/` directory.
-
----
-
-### 🤝 Contributing
-
-Contributions are welcome — especially on network design, async implementation, and performance improvements.  
-Please read the [**CONTRIBUTING.md**](CONTRIBUTING.md) file for detailed contribution guidelines.
-
-1. **Fork** the repo  
-2. Create a new branch: `git checkout -b my-feature`  
-3. Add your code or tests  
-4. Run checks:  
-   ``` bash
-   cargo fmt
-   cargo clippy
-   cargo test
-   ```  
-5. Open a **pull request** with a clear summary of your changes
+``` bash
+cargo run -p kadnet-client
+```
 
 ---
 
-### 📄 License
+## 📖 Documentation
 
-Licensed under the **CC BY-NC 4.0 License**.  
-See the [`LICENSE`](LICENSE) file for details.
+- High-level documentation: `docs/`  
+- API docs (once published): **docs.rs/kadnet-sdk**  
+- Internal architecture notes: `core/docs/`
 
 ---
 
-### 📬 Contact / Support
+## 🤝 Contributing
 
-Questions, suggestions, or discussions welcome:  
-**Discord:** [enzoblain](https://discord.com/)  
-**Mail:** enzoblain@proton.me
+Contributions welcome — especially regarding the core protocol, 
+async networking, performance, and SDK design.
 
-Please include a short context or topic so we can respond effectively.
+Please see [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+Workflow:
+
+``` bash
+cargo fmt
+cargo clippy
+cargo test --workspace
+```
+
+---
+
+## 📄 License
+
+Licensed under **CC BY-NC 4.0**.  
+See [`LICENSE`](LICENSE).
+
+---
+
+## 📬 Contact / Support
+
+Questions or feedback?
+
+**Discord:** enzoblain  
+**Email:** [enzoblain@proton.me](enzoblain@proton.me)
+
+Please include context for faster replies.
