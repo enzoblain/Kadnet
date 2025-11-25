@@ -83,7 +83,7 @@ kadnet/
 
 ## 🧪 Examples (planned)
 
-Examples will be provided under `examples/` or inside the `client/` crate.
+Examples will be provided under `sdk/examples/`.
 
 | Example          | Description                                         |
 |------------------|-----------------------------------------------------|
@@ -94,7 +94,7 @@ Examples will be provided under `examples/` or inside the `client/` crate.
 Run examples:
 
 ``` bash
-cargo run --example <example_name>
+cargo run -p sdk --example <example_name>
 ```
 
 Or run the client directly:
