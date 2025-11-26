@@ -3,7 +3,7 @@
 pub static K: u8 = 20;
 pub static N_BUCKETS: usize = 256;
 
-pub mod collections;
+pub mod math;
 pub mod node;
 
-use collections::u256::U256;
+use math::u256::U256;
