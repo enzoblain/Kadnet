@@ -1,10 +1,14 @@
-use crate::U256;
-use crate::bucket::KBucket;
+use crate::{N_BUCKETS, U256};
+use bucket::Bucket;
+
+use core::array;
+
+pub mod bucket;
 
 #[derive(Debug)]
 pub struct Node {
     pub id: U256,
-    pub bucket: KBucket,
+    pub bucket: [Bucket; N_BUCKETS],
 }
 
 impl Node {
@@ -13,7 +17,7 @@ impl Node {
 
         Self {
             id,
-            bucket: KBucket::init(id),
+            bucket: array::from_fn(|i| Bucket::init(id, i as u8)),
         }
     }
 

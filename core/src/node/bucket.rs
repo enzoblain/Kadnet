@@ -1,17 +1,19 @@
-use crate::U256;
+use crate::{K, N_BUCKETS, U256};
 
-use core::mem::{MaybeUninit, transmute};
+use core::array;
+use core::net::{IpAddr, Ipv4Addr};
 use core::ops::RangeInclusive;
 
-static K: u8 = 20;
-static N_BUCKETS: usize = 256;
+pub enum BucketError {
+    BucketFull,
+}
 
 #[derive(Debug)]
 pub struct Bucket {
     pub range: RangeInclusive<U256>,
     pub max_size: u8,
     pub size: u8,
-    pub value: Box<[U256]>,
+    pub value: [(U256, IpAddr); K as usize], // Oldest -> Newest
 }
 
 impl Bucket {
@@ -28,29 +30,26 @@ impl Bucket {
             range: bottom_value..=top_value,
             max_size,
             size: 0,
-            value: Box::new([U256::default(); K as usize]),
+            value: [(U256::default(), IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0))); K as usize],
         }
     }
-}
 
-#[derive(Debug)]
-pub struct KBucket {
-    pub buckets: [Bucket; N_BUCKETS],
-}
+    pub fn init_buckets(x: U256) -> [Self; N_BUCKETS] {
+        array::from_fn(|i| Bucket::init(x, i as u8))
+    }
 
-impl KBucket {
-    pub fn init(x: U256) -> Self {
-        let mut out: [MaybeUninit<Bucket>; N_BUCKETS] =
-            unsafe { MaybeUninit::uninit().assume_init() };
+    pub fn is_full(&self) -> bool {
+        self.max_size == self.size
+    }
 
-        for i in 0..=255 {
-            out[i as usize] = MaybeUninit::new(Bucket::init(x, i));
+    pub fn add(&mut self, value: (U256, IpAddr)) -> Result<(), BucketError> {
+        if self.is_full() {
+            return Err(BucketError::BucketFull);
         }
 
-        Self {
-            buckets: unsafe {
-                transmute::<[MaybeUninit<Bucket>; N_BUCKETS], [Bucket; N_BUCKETS]>(out)
-            },
-        }
+        self.value[self.size as usize] = value;
+        self.size += 1;
+
+        Ok(())
     }
 }

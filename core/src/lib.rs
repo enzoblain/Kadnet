@@ -1,5 +1,9 @@
-pub mod bucket;
-pub mod math;
+#![no_std]
+
+pub static K: u8 = 20;
+pub static N_BUCKETS: usize = 256;
+
+pub mod collections;
 pub mod node;
 
-pub use math::u256::U256;
+use collections::u256::U256;
