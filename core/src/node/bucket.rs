@@ -1,4 +1,4 @@
-use crate::{K, N_BUCKETS, U256};
+use crate::{ALPHA, K, N_BUCKETS, U256};
 
 use core::array;
 use core::net::{IpAddr, Ipv4Addr};
@@ -51,5 +51,22 @@ impl Bucket {
         self.size += 1;
 
         Ok(())
+    }
+
+    pub fn find_closest_node(&self, target: U256) -> [(U256, IpAddr); ALPHA] {
+        let mut sorted = [(U256::default(), IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0))); N_BUCKETS];
+
+        sorted.copy_from_slice(&self.value);
+        sorted.sort_by(|a, b| {
+            let da = a.0 ^ target;
+            let db = b.0 ^ target;
+
+            da.cmp(&db)
+        });
+
+        let mut out = [(U256::default(), IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0))); ALPHA];
+        out.copy_from_slice(&sorted[..ALPHA]);
+
+        out
     }
 }

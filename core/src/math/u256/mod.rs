@@ -5,7 +5,7 @@ use rand::RngCore;
 pub mod conv;
 pub mod ops;
 
-#[derive(Copy, Clone, Debug, Default)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct U256(pub [u8; 32]);
 impl U256 {
     pub const MAX: Self = Self([255u8; 32]);
