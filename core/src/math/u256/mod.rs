@@ -1,3 +1,5 @@
+use core::fmt;
+
 use super::{ArithmeticError, OperationResult};
 
 use rand::RngCore;
@@ -26,5 +28,18 @@ impl U256 {
         out[byte_index as usize] = 1 << bit_index;
 
         Self::from(out)
+    }
+}
+
+impl fmt::Display for U256 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for (i, b) in self.0.iter().enumerate() {
+            if i > 0 {
+                f.write_str(":")?;
+            }
+            write!(f, "{:02X}", b)?;
+        }
+
+        Ok(())
     }
 }
