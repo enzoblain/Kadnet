@@ -1,4 +1,5 @@
-use crate::id::U256;
+use crate::U256;
+use crate::math::OperationResult;
 
 use core::mem::{MaybeUninit, transmute};
 
@@ -20,7 +21,11 @@ impl Bucket {
 
         let bottom_value = U256::two_pow_k(k);
         let top_value = if k != 255 {
-            U256::two_pow_k(k + 1) - U256::from(1)
+            match U256::two_pow_k(k + 1) - U256::from(1u32) {
+                OperationResult::Ok(r) => r,
+                OperationResult::Bounds(_) => U256::MAX,
+                OperationResult::Err(_) => U256::MAX,
+            }
         } else {
             U256::MAX
         };
