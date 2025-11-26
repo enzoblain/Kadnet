@@ -9,9 +9,11 @@ pub struct Node {
 
 impl Node {
     pub fn generate_random() -> Self {
+        let id = U256::generate_random();
+
         Self {
-            id: U256::generate_random(),
-            bucket: KBucket::init(),
+            id,
+            bucket: KBucket::init(id),
         }
     }
 

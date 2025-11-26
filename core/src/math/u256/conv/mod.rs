@@ -1,4 +1,4 @@
-use super::{ArithmeticError, U256};
+use super::U256;
 
 pub mod u128;
 pub mod u16;

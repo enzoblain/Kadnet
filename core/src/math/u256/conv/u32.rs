@@ -1,4 +1,4 @@
-use super::{ArithmeticError, U256};
+use super::U256;
 
 /// u256 -> [u32; 8]
 impl From<U256> for [u32; 8] {
@@ -31,11 +31,11 @@ impl From<[u32; 8]> for U256 {
 
 /// U256 -> u32
 impl TryFrom<U256> for u32 {
-    type Error = ArithmeticError<()>;
+    type Error = ();
 
     fn try_from(value: U256) -> Result<Self, Self::Error> {
         if value.0[..28].iter().any(|&b| b != 0) {
-            return Err(ArithmeticError::Overflow(()));
+            return Err(());
         }
 
         let mut bytes = [0u8; 4];

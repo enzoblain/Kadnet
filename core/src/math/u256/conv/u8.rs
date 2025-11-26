@@ -1,4 +1,4 @@
-use super::{ArithmeticError, U256};
+use super::U256;
 
 /// u256 -> [u8; 32]
 impl From<U256> for [u8; 32] {
@@ -16,11 +16,11 @@ impl From<[u8; 32]> for U256 {
 
 /// U256 -> u8
 impl TryFrom<U256> for u8 {
-    type Error = ArithmeticError<()>;
+    type Error = ();
 
     fn try_from(value: U256) -> Result<Self, Self::Error> {
         if value.0[..31].iter().any(|&b| b != 0) {
-            return Err(ArithmeticError::Overflow(()));
+            return Err(());
         }
         Ok(value.0[31])
     }
