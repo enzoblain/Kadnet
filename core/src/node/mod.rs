@@ -1,11 +1,12 @@
 use crate::{N_BUCKETS, U256};
 use bucket::Bucket;
+use entry::Entries;
 
 use core::array;
 
 pub mod bucket;
+pub mod entry;
 
-#[derive(Debug)]
 pub struct Node {
     pub id: U256,
     pub bucket: [Bucket; N_BUCKETS],

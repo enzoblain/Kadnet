@@ -1,19 +1,19 @@
-use crate::{ALPHA, K, N_BUCKETS, U256};
+use super::Entries;
+use crate::{K, N_BUCKETS, U256};
 
 use core::array;
-use core::net::{IpAddr, Ipv4Addr};
+use core::net::IpAddr;
 use core::ops::RangeInclusive;
 
 pub enum BucketError {
     BucketFull,
 }
 
-#[derive(Debug)]
 pub struct Bucket {
     pub range: RangeInclusive<U256>,
-    pub max_size: u8,
-    pub size: u8,
-    pub value: [(U256, IpAddr); K as usize], // Oldest -> Newest
+    pub max_size: usize,
+    pub size: usize,
+    pub value: Entries,
 }
 
 impl Bucket {
@@ -28,9 +28,9 @@ impl Bucket {
 
         Self {
             range: bottom_value..=top_value,
-            max_size,
+            max_size: max_size as usize,
             size: 0,
-            value: [(U256::default(), IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0))); K as usize],
+            value: Entries::default(),
         }
     }
 
@@ -42,31 +42,18 @@ impl Bucket {
         self.max_size == self.size
     }
 
-    pub fn add(&mut self, value: (U256, IpAddr)) -> Result<(), BucketError> {
+    pub fn add(&mut self, addr: IpAddr) -> Result<(), BucketError> {
         if self.is_full() {
             return Err(BucketError::BucketFull);
         }
 
-        self.value[self.size as usize] = value;
+        self.value.add_entry(addr, self.size);
         self.size += 1;
 
         Ok(())
     }
 
-    pub fn find_closest_node(&self, target: U256) -> [(U256, IpAddr); ALPHA] {
-        let mut sorted = [(U256::default(), IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0))); N_BUCKETS];
-
-        sorted.copy_from_slice(&self.value);
-        sorted.sort_by(|a, b| {
-            let da = a.0 ^ target;
-            let db = b.0 ^ target;
-
-            da.cmp(&db)
-        });
-
-        let mut out = [(U256::default(), IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0))); ALPHA];
-        out.copy_from_slice(&sorted[..ALPHA]);
-
-        out
+    pub fn sort_by_distance(&self, target: U256) -> Entries {
+        self.value.sort_by_distance(target)
     }
 }

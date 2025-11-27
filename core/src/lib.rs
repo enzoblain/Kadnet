@@ -7,4 +7,5 @@ pub static ALPHA: usize = 3;
 pub mod math;
 pub mod node;
 
+use math::hash::sha256_bytes;
 use math::u256::U256;
