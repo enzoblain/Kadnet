@@ -1,6 +1,6 @@
 use super::bucket::Bucket;
 use super::entry::{Entries, Entry};
-use crate::{K, N_BUCKETS, U256};
+use crate::{KUSIZE, N_BUCKETS, U256};
 
 use core::array;
 
@@ -22,13 +22,13 @@ impl Node {
     pub fn get_k_closest(&self, target: U256) -> Entries {
         let mut out = Entries::default();
 
-        let mut size: u8 = 0;
+        let mut size = 0;
         let mut max_value: Option<Entry> = None;
 
-        let last = K - 1;
+        let last = KUSIZE - 1;
 
         for array in self.bucket.iter() {
-            for mut item in array.value.0.into_iter().flatten() {
+            for mut item in array.value.into_iter().flatten() {
                 item.compute_distance(target);
 
                 if let Some(ma) = max_value {
@@ -37,26 +37,26 @@ impl Node {
                     }
                 }
 
-                for i in 0..K {
-                    if let Some(ref_item) = out.0[i as usize] {
+                for i in 0..KUSIZE {
+                    if let Some(ref_item) = out[i] {
                         if item.distance == ref_item.distance {
                             break;
                         }
 
                         if item.distance < ref_item.distance {
-                            for k in (i + 1..K).rev() {
-                                out.0[k as usize] = out.0[k as usize - 1];
+                            for k in (i + 1..KUSIZE).rev() {
+                                out[k] = out[k - 1];
                             }
 
-                            out.0[i as usize] = Some(item);
+                            out[i] = Some(item);
                             break;
                         }
                     } else {
-                        out.0[i as usize] = Some(item);
+                        out[i] = Some(item);
                         size += 1;
 
-                        if size == K {
-                            max_value = out.0[last as usize];
+                        if size == KUSIZE {
+                            max_value = out[last];
                         }
 
                         break;
