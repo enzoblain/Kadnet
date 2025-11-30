@@ -1,4 +1,4 @@
-use super::Entries;
+use super::entry::Entries;
 use crate::{K, N_BUCKETS, U256};
 
 use core::array;
@@ -51,9 +51,5 @@ impl Bucket {
         self.size += 1;
 
         Ok(())
-    }
-
-    pub fn sort_by_distance(&self, target: U256) -> Entries {
-        self.value.sort_by_distance(target)
     }
 }
