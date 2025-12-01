@@ -31,10 +31,8 @@ impl Node {
             for mut item in array.value.into_iter().flatten() {
                 item.compute_distance(target);
 
-                if let Some(ma) = max_value {
-                    if item.distance >= ma.distance {
-                        continue;
-                    }
+                if max_value.is_some_and(|mv| item.distance >= mv.distance) {
+                    continue;
                 }
 
                 for i in 0..KUSIZE {
