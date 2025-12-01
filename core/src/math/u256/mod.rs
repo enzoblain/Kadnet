@@ -17,16 +17,6 @@ impl U256 {
 
         id
     }
-
-    pub fn two_pow_k(k: u8) -> Self {
-        let mut out = [0u8; 32];
-        let byte_index = 31 - (k / 8);
-        let bit_index = k % 8;
-
-        out[byte_index as usize] = 1 << bit_index;
-
-        Self::from(out)
-    }
 }
 
 impl fmt::Display for U256 {

@@ -3,14 +3,14 @@ use crate::{K, N_BUCKETS, U256};
 
 use core::array;
 use core::net::IpAddr;
-use core::ops::RangeInclusive;
+use core::ops::Range;
 
 pub enum BucketError {
     BucketFull,
 }
 
 pub struct Bucket {
-    pub range: RangeInclusive<U256>,
+    pub range: Range<U256>,
     pub max_size: usize,
     pub size: usize,
     pub value: Entries,
@@ -18,16 +18,17 @@ pub struct Bucket {
 
 impl Bucket {
     pub fn init(x: U256, b: u8) -> Self {
-        let bottom_value = ((x >> (U256::from(b) + U256::from(1u32)))
-            << (U256::from(b) + U256::from(1u32)))
-            + ((U256::from(1u32) - ((x >> b.into()) & U256::from(1u32))) << U256::from(b));
-        let top_value = bottom_value + U256::two_pow_k(2) - 1u32.into();
+        let b = U256::from(b);
+        let one = U256::from(1u32);
+
+        let bottom_value = ((x >> (b + one)) << (b + one)) + ((one - ((x >> b) & one)) << b);
+        let top_value = bottom_value + (one << b);
 
         let range = top_value - bottom_value;
         let max_size = if let Ok(k) = range.try_into() { k } else { K };
 
         Self {
-            range: bottom_value..=top_value,
+            range: bottom_value..top_value,
             max_size: max_size as usize,
             size: 0,
             value: Entries::default(),
