@@ -34,3 +34,17 @@ impl From<u8> for U256 {
         U256(out)
     }
 }
+
+// u256 -> [u8]
+impl AsRef<[u8]> for &U256 {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+// u256 -> &[u8; 32]
+impl AsRef<[u8; 32]> for U256 {
+    fn as_ref(&self) -> &[u8; 32] {
+        &self.0
+    }
+}

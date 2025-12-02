@@ -1,6 +1,8 @@
 use super::bucket::Bucket;
 use super::entry::{Entries, Entry};
-use crate::{KUSIZE, N_BUCKETS, U256};
+use crate::{KUSIZE, N_BUCKETS};
+use cryptography::U256;
+use cryptography::hash::sha256;
 
 use core::array;
 
@@ -10,8 +12,8 @@ pub struct Node {
 }
 
 impl Node {
-    pub fn generate_random() -> Self {
-        let id = U256::generate_random();
+    pub fn new(val: &[u8]) -> Self {
+        let id = sha256(val);
 
         Self {
             id,

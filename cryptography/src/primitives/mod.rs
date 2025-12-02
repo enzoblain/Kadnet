@@ -1,7 +1,5 @@
 use core::fmt;
 
-use rand::RngCore;
-
 pub mod conv;
 pub mod ops;
 
@@ -9,14 +7,6 @@ pub mod ops;
 pub struct U256(pub [u8; 32]);
 impl U256 {
     pub const MAX: Self = Self([255u8; 32]);
-
-    pub fn generate_random() -> Self {
-        let mut id = Self::default();
-
-        rand::rng().fill_bytes(&mut id.0);
-
-        id
-    }
 }
 
 impl fmt::Display for U256 {

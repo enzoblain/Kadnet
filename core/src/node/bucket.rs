@@ -1,5 +1,6 @@
 use super::entry::Entries;
-use crate::{K, N_BUCKETS, U256};
+use crate::{K, N_BUCKETS};
+use cryptography::primitives::U256;
 
 use core::array;
 use core::net::IpAddr;

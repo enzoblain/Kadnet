@@ -1,3 +1,10 @@
 [workspace]
-members = ["core", "client", "sdk"]
+members = ["core", "client", "sdk", "cryptography"]
 resolver = "2"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"

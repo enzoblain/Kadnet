@@ -1,4 +1,6 @@
-use crate::{KUSIZE, U256, sha256_bytes};
+use crate::KUSIZE;
+use cryptography::U256;
+use cryptography::hash::sha256;
 
 use core::array::IntoIter;
 use core::net::IpAddr;
@@ -75,8 +77,8 @@ pub struct Entry {
 impl From<IpAddr> for Entry {
     fn from(value: IpAddr) -> Self {
         let hash = match value {
-            IpAddr::V4(ip) => sha256_bytes(ip.octets().as_slice()),
-            IpAddr::V6(ip) => sha256_bytes(ip.octets().as_slice()),
+            IpAddr::V4(ip) => sha256(ip.octets().as_slice()),
+            IpAddr::V6(ip) => sha256(ip.octets().as_slice()),
         };
 
         Entry {
