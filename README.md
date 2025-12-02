@@ -4,7 +4,7 @@
 [![Workspace](https://img.shields.io/badge/Cargo-Workspace-blue)]()
 [![Crates.io](https://img.shields.io/crates/v/kadnet-sdk)](https://crates.io/crates/kadnet-sdk)
 [![Docs](https://img.shields.io/badge/docs.rs-kadnet--sdk-green)](https://docs.rs/kadnet-sdk)
-[![License](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-SSPL-blue.svg)](LICENSE)
 
 ---
 
@@ -51,7 +51,7 @@ through which every Nebula service communicates.
   and supporting cryptographic utilities.
 
 - 🔐 **Integrated Cryptography Layer**  
-  Through the `cryptography/` crate, Kadnet includes primitives like  
+  Through the [`cryptography`](https://github.com/enzoblain/Cryptography) crate, Kadnet includes primitives like  
   **SHA-256**, **U256**, and additional building blocks used by Nebula.
 
 - 🧱 **Designed for Larger Distributed Systems**  
@@ -113,8 +113,7 @@ kadnet/
 │
 ├── core/           # Kademlia engine (routing, queries, RPC, distance metric)
 ├── sdk/            # Developer-facing API for applications
-├── client/         # CLI example node / testing environment
-└── cryptography/   # SHA-256, U256, and shared cryptographic utilities
+└── client/         # CLI example node / testing environment
 ```
 
 ---
