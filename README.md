@@ -2,70 +2,107 @@
 
 [![Rust](https://img.shields.io/badge/Rust-1.91-orange?logo=rust)](https://www.rust-lang.org/)
 [![Workspace](https://img.shields.io/badge/Cargo-Workspace-blue)]()
-[![Docs](https://img.shields.io/badge/docs-docs.rs-blue)](https://docs.rs/kadnet-sdk)
-[![Crates.io](https://img.shields.io/crates/v/kadnet)](https://crates.io/crates/kadnet-sdk)
-[![License](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
+[![Crates.io](https://img.shields.io/crates/v/kadnet-sdk)](https://crates.io/crates/kadnet-sdk)
+[![Docs](https://img.shields.io/badge/docs.rs-kadnet--sdk-green)](https://docs.rs/kadnet-sdk)
+[![License](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](LICENSE)
 
 ---
 
-**Kadnet** is a **Rust workspace** implementing a modern, modular version of the  
-**Kademlia P2P Distributed Hash Table (DHT)** — built for **speed**, **safety**, and **scalability**.
+**Kadnet** is a modern, efficient, and modular implementation of the  
+**Kademlia Distributed Hash Table (DHT)** written in **Rust**.  
+It serves as the **peer-to-peer networking backbone** of *Nebula*,  
+a broader decentralized ecosystem designed to restore **sovereignty**,  
+**data ownership**, and **digital autonomy** to users.
 
-The workspace is organized into three crates:
-
-- **`core/`** — low-level engine (routing table, XOR distance, protocol, networking)  
-- **`sdk/`** — high-level developer-friendly API  
-- **`client/`** — CLI / example node using the SDK  
-
-Kadnet aims to be a **production-ready foundation** for decentralized networks,  
-distributed storage, and P2P communication protocols.
+Kadnet provides reliable peer discovery, deterministic routing, and  
+a communication layer capable of supporting large-scale decentralized  
+applications and infrastructures.
 
 ---
 
-## 🧭 Project Status
+# 🌌 Role in the Nebula Ecosystem
 
-🚧 **Work in Progress**  
-- Core networking and routing table logic are under active development.  
-- Feedback, design discussions, and contributions are **highly encouraged**!
+Nebula is an ambitious initiative aiming to build a **fully decentralized global platform**,  
+serving as an open alternative to large integrated digital ecosystems.
+
+Within this architecture, Kadnet acts as the **foundational networking layer**:
+
+- It enables nodes to find each other autonomously.  
+- It routes messages efficiently across the distributed topology.  
+- It ensures the network remains resilient without central servers.  
+- It provides the communication substrate used by higher Nebula layers  
+  such as storage (CosmaDB), blockchain consensus, and the decentralized app store.
+
+Kadnet is therefore not just a standalone DHT — it is the **entry point**  
+through which every Nebula service communicates.
 
 ---
 
 ## ✨ Key Features
 
-- 🦀 **Pure Rust** — idiomatic, memory-safe, dependency-light  
-- 🌐 **P2P Networking** — Kademlia node discovery & message routing  
-- ⚡ **SIMD Optimization** — accelerated XOR-distance calculations  
-- 🧵 **Optional Parallelism** — multi-core accelerated search  
-- 🧪 **Extensive Testing** — unit, integration, and property-based tests  
-- 📚 **Well-Documented Architecture** — high-level docs in `docs/`  
+- 🦀 **Pure Rust Implementation**  
+  Safe, efficient, memory-controlled, and dependency-light.
+
+- ⚡ **Kademlia-Based Peer Routing**  
+  Scalable XOR-based lookup, optimized for distributed environments.
+
+- 🧩 **Modular Workspace Architecture**  
+  Clean separation between the low-level engine, a high-level SDK,  
+  and supporting cryptographic utilities.
+
+- 🔐 **Integrated Cryptography Layer**  
+  Through the `cryptography/` crate, Kadnet includes primitives like  
+  **SHA-256**, **U256**, and additional building blocks used by Nebula.
+
+- 🧱 **Designed for Larger Distributed Systems**  
+  Kadnet is built to serve as the backbone of Nebula’s:  
+  - distributed storage layer (CosmaDB),  
+  - hybrid blockchain consensus,  
+  - decentralized application store,  
+  - user-to-user secure communication tools.
+
+- 🧪 **Testability First**  
+  Structure prepared for unit, integration, and property-based testing.
+
+---
+
+## 🧭 Project Status
+
+🚧 **Active Development**  
+Kadnet is currently being implemented as a foundational component of Nebula.
+
+Work in progress includes:
+
+- XOR distance metric & routing table  
+- Routing bucket management  
+- Query engine (FIND_NODE, FIND_VALUE, STORE)  
+- Async networking and message transport  
+- Node identity & serialization format  
+- High-level SDK architecture  
+
+Feedback and contributions are highly encouraged.
 
 ---
 
 ## 📦 Installation
 
-Kadnet is a *multi-crate workspace*.  
-Developers will typically depend on the **SDK crate**:
+Kadnet is structured as a multi-crate Rust workspace.
 
-``` toml
+During development:
+
+```toml
 [dependencies]
 kadnet-sdk = { path = "sdk" }
 ```
 
-Once published on crates.io:
+Once published:
 
-``` toml
+```toml
 [dependencies]
 kadnet-sdk = "0.1"
 ```
 
-Optional features:
-
-``` toml
-kadnet-sdk = { version = "0.1", features = ["parallel"] }
-```
-
-The low-level `kadnet-core` crate is **not intended** for direct use  
-(except for advanced internal integrations).
+`kadnet-core` is intended for advanced/internal use only.
 
 ---
 
@@ -74,74 +111,61 @@ The low-level `kadnet-core` crate is **not intended** for direct use
 ```
 kadnet/
 │
-├── core/        # Low-level Kademlia engine
-│── sdk/         # Developer-facing API
-└── client/      # CLI / example node
+├── core/           # Kademlia engine (routing, queries, RPC, distance metric)
+├── sdk/            # Developer-facing API for applications
+├── client/         # CLI example node / testing environment
+└── cryptography/   # SHA-256, U256, and shared cryptographic utilities
 ```
-
----
-
-## 🧪 Examples (planned)
-
-Examples will be provided under `sdk/examples/`.
-
-| Example          | Description                                         |
-|------------------|-----------------------------------------------------|
-| `basic.rs`       | Minimal DHT example via the SDK                     |
-| `network.rs`     | Peer discovery & async networking                   |
-| `parallel.rs`    | SIMD + parallel accelerated lookups                 |
-
-Run examples:
-
-``` bash
-cargo run -p sdk --example <example_name>
-```
-
-Or run the client directly:
-
-``` bash
-cargo run -p kadnet-client
-```
-
----
-
-## 📖 Documentation
-
-- High-level documentation: `docs/`  
-- API docs (once published): **docs.rs/kadnet-sdk**  
-- Internal architecture notes: `core/docs/`
 
 ---
 
 ## 🤝 Contributing
 
-Contributions welcome — especially regarding the core protocol, 
-async networking, performance, and SDK design.
+Contributions are welcome — especially regarding:
 
-Please see [`CONTRIBUTING.md`](CONTRIBUTING.md).
+- routing performance & correctness  
+- async networking design  
+- serialization formats  
+- SDK ergonomics  
+- testing infrastructure  
 
-Workflow:
+Standard workflow:
 
-``` bash
+```bash
 cargo fmt
 cargo clippy
 cargo test --workspace
 ```
 
----
-
-## 📄 License
-
-Licensed under **CC BY-NC 4.0**.  
-See [`LICENSE`](LICENSE).
+Check [`CONTRIBUTING.md`](CONTRIBUTING.md) for details.
 
 ---
 
-## 📬 Contact / Support
+## 📄 License Philosophy
 
-Questions or feedback?
+Kadnet is licensed under the **Server Side Public License (SSPL) v1**.
+
+This license is intentionally chosen to protect the integrity of the Nebula ecosystem.  
+While the project is fully open for **contribution, improvement, and transparency**,  
+SSPL prevents third parties from creating competing platforms, proprietary versions,  
+or commercial services derived from the project.
+
+Nebula is designed to grow as **one unified, community-driven network**.  
+By using SSPL, we ensure that:
+
+- all improvements remain open and benefit the ecosystem,  
+- the network does not fragment into multiple incompatible forks,  
+- companies cannot exploit the project without contributing back,  
+- contributors retain full access to the entire codebase.
+
+In short, SSPL ensures that Kadnet — and the Nebula ecosystem built on top of it —  
+remains **open to the community, but protected from fragmentation and exploitation**.
+
+---
+
+## 📬 Contact
 
 **Discord:** enzoblain  
-**Email:** [enzoblain@proton.me](enzoblain@proton.me)
+**Email:** enzoblain@proton.me  
 
-Please include context for faster replies.
+Feel free to reach out with technical questions or design discussions.
