@@ -1,72 +1,19 @@
-use crate::KUSIZE;
+//! Peer entry representation for Kademlia DHT nodes.
+//!
+//! Represents a single peer entry containing its identifier, IP address,
+//! and computed XOR distance to a target node.
+
 use cryptography::U256;
 use cryptography::hash::sha256;
 
-use core::array::IntoIter;
 use core::net::IpAddr;
-use core::ops::{Index, IndexMut};
-use core::slice::{Iter, IterMut};
 
-#[derive(Default, Clone, Copy)]
-pub struct Entries(pub [Option<Entry>; KUSIZE]); // Oldest -> Newest
-
-impl Entries {
-    pub fn add_entry(&mut self, addr: IpAddr, place: usize) {
-        self[place] = Some(Entry::from(addr));
-    }
-}
-
-impl Index<usize> for Entries {
-    type Output = Option<Entry>;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.0[index]
-    }
-}
-
-impl IndexMut<usize> for Entries {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.0[index]
-    }
-}
-
-impl Entries {
-    pub fn iter(&self) -> Iter<'_, Option<Entry>> {
-        self.0.iter()
-    }
-
-    pub fn iter_mut(&mut self) -> IterMut<'_, Option<Entry>> {
-        self.0.iter_mut()
-    }
-}
-
-impl<'a> IntoIterator for &'a Entries {
-    type Item = &'a Option<Entry>;
-    type IntoIter = Iter<'a, Option<Entry>>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.iter()
-    }
-}
-
-impl<'a> IntoIterator for &'a mut Entries {
-    type Item = &'a mut Option<Entry>;
-    type IntoIter = IterMut<'a, Option<Entry>>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.iter_mut()
-    }
-}
-
-impl IntoIterator for Entries {
-    type Item = Option<Entry>;
-    type IntoIter = IntoIter<Option<Entry>, KUSIZE>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
-    }
-}
-
+/// Represents a peer in the Kademlia network.
+///
+/// An entry contains:
+/// - `id`: The peer's unique identifier (SHA256 hash of IP address)
+/// - `addr`: The IP address (IPv4 or IPv6) of the peer
+/// - `distance`: The XOR distance to a target node (computed on demand)
 #[derive(Clone, Copy)]
 pub struct Entry {
     pub id: U256,
@@ -74,23 +21,34 @@ pub struct Entry {
     pub distance: U256,
 }
 
-impl From<IpAddr> for Entry {
-    fn from(value: IpAddr) -> Self {
-        let hash = match value {
+impl Entry {
+    /// Creates a new entry from an IP address.
+    ///
+    /// Computes the entry's ID by hashing the IP address octets with SHA256.
+    /// The distance is initialized to zero and computed later when needed.
+    pub fn new(addr: IpAddr) -> Entry {
+        let hash = match addr {
             IpAddr::V4(ip) => sha256(ip.octets().as_slice()),
             IpAddr::V6(ip) => sha256(ip.octets().as_slice()),
         };
 
         Entry {
             id: hash,
-            addr: value,
+            addr,
             distance: U256::default(),
         }
     }
-}
 
-impl Entry {
+    /// Computes the XOR distance between this entry's ID and a target ID.
+    ///
+    /// Updates the entry's distance field with the XOR of `id` and the target.
+    /// Used to determine proximity in the Kademlia network.
     pub fn compute_distance(&mut self, target: U256) {
         self.distance = self.id ^ target;
+    }
+
+    /// Returns the XOR distance to the target node.
+    pub fn get_distance(&self) -> U256 {
+        self.distance
     }
 }

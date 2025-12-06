@@ -3,5 +3,9 @@ name = "kadnet-core"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+no-std = ["datastructures/no-std", "cryptography/speed"]
+
 [dependencies]
 cryptography = { git = "https://github.com/enzoblain/Cryptography" } 
+datastructures = { git = "https://github.com/enzoblain/Datastructures" } 
