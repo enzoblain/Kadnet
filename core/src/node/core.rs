@@ -108,22 +108,22 @@ impl Node {
         keep_lowest_by(
             &mut closest,
             self.bucket2.find_n_closest::<N>(target),
-            |a, b| put_option_last(a, b, |aa, bb| aa.compare_distance(&bb)),
+            |a, b| put_option_last(a, b, |aa, bb| aa.compare_distance(bb)),
         );
         keep_lowest_by(
             &mut closest,
             self.bucket3.find_n_closest::<N>(target),
-            |a, b| put_option_last(a, b, |aa, bb| aa.compare_distance(&bb)),
+            |a, b| put_option_last(a, b, |aa, bb| aa.compare_distance(bb)),
         );
         keep_lowest_by(
             &mut closest,
             self.bucket4.find_n_closest::<N>(target),
-            |a, b| put_option_last(a, b, |aa, bb| aa.compare_distance(&bb)),
+            |a, b| put_option_last(a, b, |aa, bb| aa.compare_distance(bb)),
         );
 
         for bucket in self.buckets.iter_mut() {
             keep_lowest_by(&mut closest, bucket.find_n_closest::<N>(target), |a, b| {
-                put_option_last(a, b, |aa, bb| aa.compare_distance(&bb))
+                put_option_last(a, b, |aa, bb| aa.compare_distance(bb))
             });
         }
 
