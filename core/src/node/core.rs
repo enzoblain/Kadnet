@@ -7,14 +7,18 @@ use crate::node::bucket::Bucket;
 use crate::node::entry::Entry;
 use crate::{KUSIZE, N_BUCKETS_32};
 
-#[cfg(feature = "no-std")]
-use crate::MAX_CLOSEST;
-
+use core::array;
 use cryptography::U256;
 use cryptography::hash::sha256;
 
-use core::array;
-use core::mem::MaybeUninit;
+#[cfg(feature = "no-std")]
+use datastructures::array::core::keep_lowest_array_by as keep_lowest_by;
+
+#[cfg(feature = "no-std")]
+use datastructures::option::core::put_option_last;
+
+#[cfg(not(feature = "no-std"))]
+use datastructures::vec::core::keep_lowest_vec_by as keep_lowest_by;
 
 /// Represents a Kademlia DHT node.
 ///
@@ -65,27 +69,32 @@ impl Node {
     /// Searches all buckets and returns an array of the N closest entries.
     /// Entries are sorted by XOR distance to the target.
     #[cfg(not(feature = "no-std"))]
-    pub fn get_n_closest<const N: usize>(&mut self, target: U256) -> [MaybeUninit<Entry>; N] {
-        let mut entries = Vec::new();
+    pub fn get_n_closest<const N: usize>(&mut self, target: U256) -> Vec<Entry> {
+        let mut closest = self.bucket1.find_n_closest::<N>(target);
 
-        entries.extend(self.bucket1.find_n_closest::<N>(target).0);
-        entries.extend(self.bucket2.find_n_closest::<N>(target).0);
-        entries.extend(self.bucket3.find_n_closest::<N>(target).0);
-        entries.extend(self.bucket4.find_n_closest::<N>(target).0);
+        keep_lowest_by(
+            &mut closest,
+            self.bucket2.find_n_closest::<N>(target),
+            |a, b| a.compare_distance(b),
+        );
+        keep_lowest_by(
+            &mut closest,
+            self.bucket3.find_n_closest::<N>(target),
+            |a, b| a.compare_distance(b),
+        );
+        keep_lowest_by(
+            &mut closest,
+            self.bucket4.find_n_closest::<N>(target),
+            |a, b| a.compare_distance(b),
+        );
 
         for bucket in self.buckets.iter_mut() {
-            entries.extend(bucket.find_n_closest::<N>(target).0);
+            keep_lowest_by(&mut closest, bucket.find_n_closest::<N>(target), |a, b| {
+                a.compare_distance(b)
+            });
         }
 
-        entries.sort_by(|a, b| a.distance.cmp(&b.distance));
-
-        let mut out: [MaybeUninit<Entry>; N] = unsafe { MaybeUninit::uninit().assume_init() };
-
-        for (i, entry) in entries.into_iter().take(N).enumerate() {
-            out[i] = MaybeUninit::new(entry);
-        }
-
-        out
+        closest
     }
 
     /// Finds the N closest peers to a target ID (no-std version).
@@ -93,58 +102,31 @@ impl Node {
     /// Searches all buckets and returns an array of the N closest entries.
     /// Uses a fixed-size buffer for stack allocation without heap allocation.
     #[cfg(feature = "no-std")]
-    pub fn get_n_closest<const N: usize>(&mut self, target: U256) -> [MaybeUninit<Entry>; N] {
-        let mut temp: [MaybeUninit<Entry>; MAX_CLOSEST] =
-            unsafe { MaybeUninit::uninit().assume_init() };
-        let mut len = 0;
+    pub fn get_n_closest<const N: usize>(&mut self, target: U256) -> [Option<Entry>; N] {
+        let mut closest = self.bucket1.find_n_closest::<N>(target);
 
-        macro_rules! append_bucket {
-            ($bucket:expr) => {
-                let (entries, n) = $bucket.find_n_closest::<N>(target);
-                for i in 0..n {
-                    temp[len] = entries[i];
-                    len += 1;
-                }
-            };
-        }
-
-        append_bucket!(self.bucket1);
-        append_bucket!(self.bucket2);
-        append_bucket!(self.bucket3);
-        append_bucket!(self.bucket4);
+        keep_lowest_by(
+            &mut closest,
+            self.bucket2.find_n_closest::<N>(target),
+            |a, b| put_option_last(a, b, |aa, bb| aa.compare_distance(&bb)),
+        );
+        keep_lowest_by(
+            &mut closest,
+            self.bucket3.find_n_closest::<N>(target),
+            |a, b| put_option_last(a, b, |aa, bb| aa.compare_distance(&bb)),
+        );
+        keep_lowest_by(
+            &mut closest,
+            self.bucket4.find_n_closest::<N>(target),
+            |a, b| put_option_last(a, b, |aa, bb| aa.compare_distance(&bb)),
+        );
 
         for bucket in self.buckets.iter_mut() {
-            append_bucket!(bucket);
+            keep_lowest_by(&mut closest, bucket.find_n_closest::<N>(target), |a, b| {
+                put_option_last(a, b, |aa, bb| aa.compare_distance(&bb))
+            });
         }
 
-        for i in 1..len {
-            let mut j = i;
-
-            while j > 0 {
-                unsafe {
-                    let a = temp[j - 1].assume_init_ref();
-                    let b = temp[j].assume_init_ref();
-
-                    if a.distance <= b.distance {
-                        break;
-                    }
-
-                    temp.swap(j - 1, j);
-                }
-
-                j -= 1;
-            }
-        }
-
-        let mut out: [MaybeUninit<Entry>; N] = unsafe { MaybeUninit::uninit().assume_init() };
-        for i in 0..N {
-            if i < len {
-                out[i] = temp[i];
-            } else {
-                out[i] = MaybeUninit::uninit();
-            }
-        }
-
-        out
+        closest
     }
 }

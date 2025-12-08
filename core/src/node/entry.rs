@@ -6,6 +6,7 @@
 use cryptography::U256;
 use cryptography::hash::sha256;
 
+use core::cmp::Ordering;
 use core::net::IpAddr;
 
 /// Represents a peer in the Kademlia network.
@@ -50,5 +51,11 @@ impl Entry {
     /// Returns the XOR distance to the target node.
     pub fn get_distance(&self) -> U256 {
         self.distance
+    }
+
+    /// Compares the computed distance of two entries.
+    /// Assumes `compute_distance` has been called beforehand on both entries.
+    pub fn compare_distance(&self, target: &Self) -> Ordering {
+        self.distance.cmp(&target.distance)
     }
 }

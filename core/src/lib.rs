@@ -14,11 +14,6 @@ pub static ALPHA: usize = 4;
 /// Size of larger buckets (K value as usize for array indexing).
 static KUSIZE: usize = 16;
 
-/// Maximum number of closest peers that can be collected from all buckets.
-/// Used in no-std mode for stack-allocated buffers.
-#[cfg(feature = "no-std")]
-static MAX_CLOSEST: usize = 256 * ALPHA;
-
 /// Number of active buckets with size K=16.
 /// Excludes the first 4 special buckets (K=1,2,4,8) that have smaller capacities.
 static N_BUCKETS_32: usize = 252;

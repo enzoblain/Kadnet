@@ -4,7 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-no-std = ["datastructures/no-std", "cryptography/speed"]
+no-std = ["datastructures/no-std"]
+default = ["cryptography/speed"]
 
 [dependencies]
 cryptography = { git = "https://github.com/enzoblain/Cryptography" } 

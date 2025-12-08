@@ -19,9 +19,6 @@ pub enum BucketError {
     OutOfRange,
 }
 
-#[cfg(feature = "no-std")]
-use core::mem::MaybeUninit;
-
 /// A bucket for storing peer entries in the Kademlia DHT.
 ///
 /// Each bucket covers a specific range of node IDs and stores up to K entries.
@@ -83,10 +80,7 @@ where
     /// The returned array may contain more entries than the actual count;
     /// only the first `count` entries are valid.
     #[cfg(feature = "no-std")]
-    pub fn find_n_closest<const N: usize>(
-        &mut self,
-        target: U256,
-    ) -> ([MaybeUninit<Entry>; N], usize) {
+    pub fn find_n_closest<const N: usize>(&mut self, target: U256) -> [Option<Entry>; N] {
         self.compute_distance(target);
 
         self.value
@@ -97,7 +91,7 @@ where
     ///
     /// Returns a tuple of (vector of entries, count of found entries).
     #[cfg(not(feature = "no-std"))]
-    pub fn find_n_closest<const N: usize>(&mut self, target: U256) -> (Vec<Entry>, usize) {
+    pub fn find_n_closest<const N: usize>(&mut self, target: U256) -> Vec<Entry> {
         self.compute_distance(target);
 
         self.value
