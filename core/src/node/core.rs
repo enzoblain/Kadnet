@@ -5,20 +5,12 @@
 
 use crate::node::bucket::Bucket;
 use crate::node::entry::Entry;
-use crate::{KUSIZE, N_BUCKETS_32};
+use crate::structures::array::keep_lowest_array_by;
+use crate::{ALPHA, KUSIZE, N_BUCKETS, SMALL_BUCKET_COUNT};
 
 use core::array;
 use cryptography::U256;
 use cryptography::hash::sha256;
-
-#[cfg(feature = "no-std")]
-use datastructures::array::core::keep_lowest_array_by as keep_lowest_by;
-
-#[cfg(feature = "no-std")]
-use datastructures::option::core::put_option_last;
-
-#[cfg(not(feature = "no-std"))]
-use datastructures::vec::core::keep_lowest_vec_by as keep_lowest_by;
 
 /// Represents a Kademlia DHT node.
 ///
@@ -27,106 +19,107 @@ use datastructures::vec::core::keep_lowest_vec_by as keep_lowest_by;
 /// and 252 larger buckets (K=16) for more distant peers.
 pub struct Node {
     pub id: U256,
-
-    bucket1: Bucket<1>,
-    bucket2: Bucket<2>,
-    bucket3: Bucket<4>,
-    bucket4: Bucket<8>,
-
-    buckets: [Bucket<KUSIZE>; N_BUCKETS_32],
+    buckets: [Bucket; N_BUCKETS],
 }
 
 impl Node {
-    /// Creates a new Kademlia node with the given identifier.
+    /// Creates a new Kademlia node with the given seed value.
     ///
-    /// Initializes all buckets based on the node's SHA256 hashed ID.
-    /// The ID uniquely identifies this node in the DHT network.
+    /// Hashes the provided seed using SHA256 to generate the node's unique ID.
+    /// Initializes N_BUCKETS (256) buckets with exponentially increasing capacities:
+    /// - Buckets 0-4: sizes 1, 2, 4, 8, 16 (K value 1 to 16)
+    /// - Buckets 5+: all have size KUSIZE (32) for efficient large-distance routing
+    ///
+    /// # Arguments
+    /// * `val` - Seed bytes used to generate the node's unique identifier
     pub fn new(val: &[u8]) -> Self {
         let id = sha256(val);
+        let buckets: [Bucket; N_BUCKETS] = array::from_fn(|i| {
+            let size = if i <= SMALL_BUCKET_COUNT {
+                1usize << i
+            } else {
+                KUSIZE
+            };
+            Bucket::init(size)
+        });
 
-        let bucket1 = Bucket::<1>::init(id, 0);
-        let bucket2 = Bucket::<2>::init(id, 1);
-        let bucket3 = Bucket::<4>::init(id, 2);
-        let bucket4 = Bucket::<8>::init(id, 3);
-
-        // Start at bucket number 4 (after the first four explicit buckets) to keep the
-        // computed bucket indices within the u8 range and avoid overflow when i is large.
-        let buckets: [Bucket<KUSIZE>; N_BUCKETS_32] =
-            array::from_fn(|i| Bucket::<KUSIZE>::init(id, i as u8 + 4));
-
-        Self {
-            id,
-            bucket1,
-            bucket2,
-            bucket3,
-            bucket4,
-            buckets,
-        }
+        Self { id, buckets }
     }
 
-    /// Finds the N closest peers to a target ID (std version).
+    /// Finds the ALPHA closest peers to a target ID using a 2-way bucket search.
     ///
-    /// Searches all buckets and returns an array of the N closest entries.
-    /// Entries are sorted by XOR distance to the target.
-    #[cfg(not(feature = "no-std"))]
-    pub fn get_n_closest<const N: usize>(&mut self, target: U256) -> Vec<Entry> {
-        let mut closest = self.bucket1.find_n_closest::<N>(target);
+    /// Algorithm:
+    /// 1. Determines the corresponding bucket for the target ID
+    /// 2. Queries the corresponding bucket for closest entries
+    /// 3. If result count < ALPHA, expands search to neighboring buckets (left/right)
+    /// 4. Continues expanding until ALPHA entries are found or all buckets exhausted
+    /// 5. Returns the top ALPHA entries sorted by XOR distance
+    ///
+    /// # Returns
+    /// A tuple containing:
+    /// - An array of up to ALPHA closest entries
+    /// - The actual count of entries found (may be < ALPHA if network is sparse)
+    pub fn get_closests(&mut self, target: U256) -> ([Entry; ALPHA], usize) {
+        let bucket_number = self.find_corresponding_bucket(target) as isize;
 
-        keep_lowest_by(
-            &mut closest,
-            self.bucket2.find_n_closest::<N>(target),
-            |a, b| a.compare_distance(b),
-        );
-        keep_lowest_by(
-            &mut closest,
-            self.bucket3.find_n_closest::<N>(target),
-            |a, b| a.compare_distance(b),
-        );
-        keep_lowest_by(
-            &mut closest,
-            self.bucket4.find_n_closest::<N>(target),
-            |a, b| a.compare_distance(b),
-        );
+        let (mut closests, size) = self.buckets[bucket_number as usize].find_n_closest(target);
 
-        for bucket in self.buckets.iter_mut() {
-            keep_lowest_by(&mut closest, bucket.find_n_closest::<N>(target), |a, b| {
-                a.compare_distance(b)
-            });
+        if size == ALPHA {
+            return (closests, ALPHA);
         }
 
-        closest
+        let mut other_closests = [Entry::default(); ALPHA];
+        let mut other_size = 0;
+
+        let compare_distance = |a: &Entry, b: &Entry| a.distance.cmp(&b.distance);
+
+        for d in 1..N_BUCKETS {
+            let left = bucket_number - d as isize;
+            let right = bucket_number + d as isize;
+
+            if left >= 0 {
+                let (c, s) = self.buckets[left as usize].find_n_closest(target);
+                other_size =
+                    keep_lowest_array_by(&mut other_closests, other_size, &c, s, compare_distance);
+            }
+
+            if size + other_size >= ALPHA {
+                break;
+            }
+
+            if right < N_BUCKETS as isize {
+                let (c, s) = self.buckets[right as usize].find_n_closest(target);
+                other_size =
+                    keep_lowest_array_by(&mut other_closests, other_size, &c, s, compare_distance);
+            }
+
+            if size + other_size >= ALPHA {
+                break;
+            }
+        }
+
+        let final_size = keep_lowest_array_by(
+            &mut closests,
+            size,
+            &other_closests,
+            other_size,
+            compare_distance,
+        );
+
+        (closests, final_size)
     }
 
-    /// Finds the N closest peers to a target ID (no-std version).
+    /// Finds the bucket index corresponding to a target ID.
     ///
-    /// Searches all buckets and returns an array of the N closest entries.
-    /// Uses a fixed-size buffer for stack allocation without heap allocation.
-    #[cfg(feature = "no-std")]
-    pub fn get_n_closest<const N: usize>(&mut self, target: U256) -> [Option<Entry>; N] {
-        let mut closest = self.bucket1.find_n_closest::<N>(target);
+    /// Uses the XOR distance to determine which bucket a target ID belongs to.
+    /// The bucket index is computed from the position of the most significant bit
+    /// in the XOR distance.
+    ///
+    /// # Returns
+    /// The index of the bucket containing entries closest to the target ID.
+    fn find_corresponding_bucket(&self, target: U256) -> u8 {
+        let distance = self.id ^ target;
 
-        keep_lowest_by(
-            &mut closest,
-            self.bucket2.find_n_closest::<N>(target),
-            |a, b| put_option_last(a, b, |aa, bb| aa.compare_distance(bb)),
-        );
-        keep_lowest_by(
-            &mut closest,
-            self.bucket3.find_n_closest::<N>(target),
-            |a, b| put_option_last(a, b, |aa, bb| aa.compare_distance(bb)),
-        );
-        keep_lowest_by(
-            &mut closest,
-            self.bucket4.find_n_closest::<N>(target),
-            |a, b| put_option_last(a, b, |aa, bb| aa.compare_distance(bb)),
-        );
-
-        for bucket in self.buckets.iter_mut() {
-            keep_lowest_by(&mut closest, bucket.find_n_closest::<N>(target), |a, b| {
-                put_option_last(a, b, |aa, bb| aa.compare_distance(bb))
-            });
-        }
-
-        closest
+        (N_BUCKETS - 1 - distance.leading_zeros() as usize) as u8
     }
 }

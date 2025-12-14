@@ -34,28 +34,16 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: Clippy (lint)
-        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+        run: cargo clippy --workspace --all-targets -- -D warnings
 
-      - name: Build (std)
+      - name: Build
         run: cargo build --workspace --verbose
 
-      - name: Build (no-std)
-        run: cargo build --workspace --features no-std --verbose
-
-  test_std:
+  test:
     runs-on: ubuntu-latest
     needs: build
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - name: Test (std)
+      - name: Test
         run: cargo test --workspace --verbose
-
-  test_nostd:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Test (no-std)
-        run: cargo test --workspace --features no-std --verbose

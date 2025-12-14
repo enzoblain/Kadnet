@@ -8,6 +8,7 @@ use cryptography::hash::sha256;
 
 use core::cmp::Ordering;
 use core::net::IpAddr;
+use std::net::Ipv4Addr;
 
 /// Represents a peer in the Kademlia network.
 ///
@@ -40,10 +41,14 @@ impl Entry {
         }
     }
 
-    /// Computes the XOR distance between this entry's ID and a target ID.
+    /// Computes and caches the XOR distance to a target ID.
     ///
-    /// Updates the entry's distance field with the XOR of `id` and the target.
-    /// Used to determine proximity in the Kademlia network.
+    /// The Kademlia metric uses XOR distance for determining node proximity.
+    /// This method updates the entry's cached distance field, which is then used
+    /// for sorting and selecting closest peers.
+    ///
+    /// # Arguments
+    /// * `target` - The target ID to measure distance to
     pub fn compute_distance(&mut self, target: U256) {
         self.distance = self.id ^ target;
     }
@@ -57,5 +62,15 @@ impl Entry {
     /// Assumes `compute_distance` has been called beforehand on both entries.
     pub fn compare_distance(&self, target: &Self) -> Ordering {
         self.distance.cmp(&target.distance)
+    }
+}
+
+impl Default for Entry {
+    fn default() -> Self {
+        Self {
+            id: U256::ZERO,
+            addr: IpAddr::V4(Ipv4Addr::from_octets([0u8; 4])),
+            distance: U256::ZERO,
+        }
     }
 }
