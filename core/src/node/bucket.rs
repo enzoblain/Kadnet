@@ -3,7 +3,7 @@
 //! A bucket stores peer entries (nodes) within a specific XOR distance range.
 //! Each bucket has a fixed maximum capacity K and maintains entries sorted by distance.
 
-use crate::node::entry::Entry;
+use crate::node::entry::{Entry, EntryError};
 use crate::structures::vecdeque::{SizedVecDeque, SizedVecDequeError};
 use crate::{ALPHA, KUSIZE};
 
@@ -17,6 +17,7 @@ pub enum BucketError {
     SizedVecDequeError(SizedVecDequeError),
     /// Entry is outside the acceptable range for this bucket
     OutOfRange,
+    EntryError(EntryError),
 }
 
 /// A bucket for storing peer entries in the Kademlia DHT.
@@ -45,8 +46,8 @@ impl Bucket {
     /// Adds a new peer entry with the given IP address to the bucket.
     ///
     /// Returns `Ok(())` on success or `LinkedListError` if the bucket is full.
-    pub fn add_entry(&mut self, addr: IpAddr) -> Result<(), BucketError> {
-        let entry = Entry::new(addr);
+    pub async fn add_entry(&mut self, addr: IpAddr) -> Result<(), BucketError> {
+        let entry = Entry::new(addr).await.map_err(BucketError::EntryError)?;
 
         match self.value.insert(entry) {
             Ok(()) => Ok(()),
@@ -69,12 +70,12 @@ impl Bucket {
     /// - Array of up to ALPHA closest entries
     /// - Actual count of entries returned (≤ ALPHA)
     pub fn find_n_closest(&mut self, target: U256) -> ([Entry; ALPHA], usize) {
-        let compute_distance = |e: &mut Entry| e.compute_distance(target);
-        let compare_distance = |a: &Entry, b: &Entry| a.distance.cmp(&b.distance);
+        let compute_distance = |e: &mut Entry| e.compute_distance_score(target);
+        let compare_distance_score = |a: &Entry, b: &Entry| a.compare_distance_score(b);
 
         match self
             .value
-            .compute_and_select_n_first_by::<ALPHA>(compute_distance, compare_distance)
+            .compute_and_select_n_first_by::<ALPHA>(compute_distance, compare_distance_score)
         {
             Ok(res) => res,
             Err(_) => ([Entry::default(); ALPHA], 0),

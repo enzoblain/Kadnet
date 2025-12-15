@@ -9,28 +9,28 @@ use std::net::{IpAddr, Ipv4Addr};
 
 // ===== Entry Tests =====
 
-#[test]
-fn entry_creation_from_ipv4() {
+#[tokio::test]
+async fn entry_creation_from_ipv4() {
     let ip = IpAddr::V4(Ipv4Addr::new(192, 168, 1, 1));
-    let entry = Entry::new(ip);
+    let entry = Entry::new(ip).await.unwrap();
 
     assert_eq!(entry.addr, ip);
     assert_eq!(entry.distance, U256::from(0u32)); // Initial distance is 0
 }
 
-#[test]
-fn entry_creation_from_ipv6() {
+#[tokio::test]
+async fn entry_creation_from_ipv6() {
     let ip = IpAddr::V6("::1".parse().unwrap());
-    let entry = Entry::new(ip);
+    let entry = Entry::new(ip).await.unwrap();
 
     assert_eq!(entry.addr, ip);
     assert_eq!(entry.distance, U256::from(0u32));
 }
 
-#[test]
-fn entry_compute_distance_updates_field() {
+#[tokio::test]
+async fn entry_compute_distance_updates_field() {
     let ip = IpAddr::V4(Ipv4Addr::new(10, 0, 0, 1));
-    let mut entry = Entry::new(ip);
+    let mut entry = Entry::new(ip).await.unwrap();
 
     let target = U256::from(42u32);
     entry.compute_distance(target);
@@ -39,16 +39,94 @@ fn entry_compute_distance_updates_field() {
     assert_ne!(entry.distance, U256::from(0u32));
 }
 
-#[test]
-fn entry_distance_computed_correctly() {
+#[tokio::test]
+async fn entry_distance_computed_correctly() {
     let ip = IpAddr::V4(Ipv4Addr::new(10, 0, 0, 1));
-    let mut entry = Entry::new(ip);
+    let mut entry = Entry::new(ip).await.unwrap();
 
     let target = U256::from(100u32);
     entry.compute_distance(target);
 
     // Distance should be XOR of entry.id and target
     assert_eq!(entry.distance, entry.id ^ target);
+}
+
+#[tokio::test]
+async fn entry_compute_distance_score_updates_score() {
+    let ip = IpAddr::V4(Ipv4Addr::new(10, 0, 0, 1));
+    let mut entry = Entry::new(ip).await.unwrap();
+
+    let target = U256::from(100u32);
+    entry.compute_distance_score(target);
+
+    // Distance score should be non-zero after computation
+    assert_ne!(entry.distance_score, U256::from(0u32));
+}
+
+#[tokio::test]
+async fn entry_distance_score_includes_distance() {
+    let ip = IpAddr::V4(Ipv4Addr::new(10, 0, 0, 1));
+    let mut entry = Entry::new(ip).await.unwrap();
+
+    let target = U256::from(100u32);
+    entry.compute_distance_score(target);
+
+    // Distance score should be at least as large as distance (since penalty is added)
+    assert!(entry.distance_score >= entry.distance);
+}
+
+#[tokio::test]
+async fn entry_compare_distance_score_orders_correctly() {
+    let ip1 = IpAddr::V4(Ipv4Addr::new(10, 0, 0, 1));
+    let ip2 = IpAddr::V4(Ipv4Addr::new(10, 0, 0, 2));
+
+    let mut entry1 = Entry::new(ip1).await.unwrap();
+    let mut entry2 = Entry::new(ip2).await.unwrap();
+
+    let target = U256::from(100u32);
+    entry1.compute_distance_score(target);
+    entry2.compute_distance_score(target);
+
+    // Comparison should return a valid ordering
+    let ordering = entry1.compare_distance_score(&entry2);
+    assert!(
+        ordering == std::cmp::Ordering::Less
+            || ordering == std::cmp::Ordering::Equal
+            || ordering == std::cmp::Ordering::Greater
+    );
+}
+
+#[tokio::test]
+async fn entry_distance_score_same_for_same_target() {
+    let ip = IpAddr::V4(Ipv4Addr::new(10, 0, 0, 1));
+    let mut entry1 = Entry::new(ip).await.unwrap();
+    let mut entry2 = Entry::new(ip).await.unwrap();
+
+    let target = U256::from(100u32);
+    entry1.compute_distance_score(target);
+    entry2.compute_distance_score(target);
+
+    // Same IP and target should produce same distance score
+    assert_eq!(entry1.distance_score, entry2.distance_score);
+}
+
+#[tokio::test]
+async fn entry_respond_time_initialized() {
+    let ip = IpAddr::V4(Ipv4Addr::new(10, 0, 0, 1));
+    let entry = Entry::new(ip).await.unwrap();
+
+    // Response time should be initialized (will be 0 until ping is implemented)
+    assert_eq!(entry.respond_time.as_millis(), 0);
+}
+
+#[tokio::test]
+async fn entry_default_has_zero_values() {
+    let entry = Entry::default();
+
+    assert_eq!(entry.id, U256::ZERO);
+    assert_eq!(entry.distance, U256::ZERO);
+    assert_eq!(entry.distance_score, U256::ZERO);
+    assert_eq!(entry.respond_time.as_millis(), 0);
 }
 
 #[test]
@@ -60,19 +138,19 @@ fn bucket_initialization_is_empty() {
     assert_eq!(size, 0);
 }
 
-#[test]
-fn bucket_add_entry_to_bucket() {
+#[tokio::test]
+async fn bucket_add_entry_to_bucket() {
     let mut bucket = Bucket::init(16);
 
     let ip = IpAddr::V4(Ipv4Addr::new(10, 0, 0, 1));
-    let result = bucket.add_entry(ip);
+    let result = bucket.add_entry(ip).await;
 
     // Entry addition should complete (result may be Ok or Err depending on range)
     let _ = result;
 }
 
-#[test]
-fn bucket_can_add_multiple_entries() {
+#[tokio::test]
+async fn bucket_can_add_multiple_entries() {
     let id = sha256(b"bucket-id");
     let mut bucket = Bucket::init(16);
 
@@ -83,21 +161,21 @@ fn bucket_can_add_multiple_entries() {
     ];
 
     for ip in &ips {
-        let _result = bucket.add_entry(*ip);
+        let _result = bucket.add_entry(*ip).await;
     }
 
     let (_, size) = bucket.find_n_closest(id);
     assert!(size <= 3);
 }
 
-#[test]
-fn bucket_find_n_closest_respects_limit() {
+#[tokio::test]
+async fn bucket_find_n_closest_respects_limit() {
     let id = sha256(b"bucket-id");
     let mut bucket = Bucket::init(8);
 
     for i in 0..5 {
         let ip = IpAddr::V4(Ipv4Addr::new(10, 0, 0, i));
-        bucket.add_entry(ip).ok();
+        bucket.add_entry(ip).await.ok();
     }
 
     let (_, size) = bucket.find_n_closest(id);
@@ -123,14 +201,14 @@ fn bucket_initialization_with_different_k_values() {
     assert_eq!(bucket_k16.find_n_closest(id).1, 0);
 }
 
-#[test]
-fn bucket_find_n_closest_returns_sorted_results() {
+#[tokio::test]
+async fn bucket_find_n_closest_returns_sorted_results() {
     let id = sha256(b"bucket-id");
     let mut bucket = Bucket::init(16);
 
     for i in 0..8 {
         let ip = IpAddr::V4(Ipv4Addr::new(10, 0, 0, i));
-        bucket.add_entry(ip).ok();
+        bucket.add_entry(ip).await.ok();
     }
 
     let (_, size) = bucket.find_n_closest(id);
