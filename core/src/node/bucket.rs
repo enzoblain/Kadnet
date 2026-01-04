@@ -2,7 +2,7 @@ use crate::node::entry::{Entry, EntryError};
 use crate::structures::vecdeque::{SizedVecDeque, SizedVecDequeError};
 use crate::{ALPHA, KUSIZE};
 
-use cryptography::U256;
+use cryptal::primitives::U256;
 
 use std::net::IpAddr;
 

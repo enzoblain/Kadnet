@@ -2,8 +2,8 @@ use kadnet_core::node::bucket::Bucket;
 use kadnet_core::node::core::Node;
 use kadnet_core::node::entry::Entry;
 
-use cryptography::U256;
-use cryptography::hash::sha256;
+use cryptal::hash::sha256;
+use cryptal::primitives::U256;
 
 use std::net::{IpAddr, Ipv4Addr};
 

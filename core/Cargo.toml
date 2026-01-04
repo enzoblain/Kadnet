@@ -6,7 +6,7 @@ edition = "2024"
 [features]
 
 [dependencies]
-cryptography = { git = "https://github.com/enzoblain/Cryptography" } 
+cryptal = { git = "https://github.com/Nebula-ecosystem/Cryptal" }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }

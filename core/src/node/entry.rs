@@ -1,7 +1,7 @@
 use crate::{S, T_MAX_MS};
 
-use cryptography::U256;
-use cryptography::hash::sha256;
+use cryptal::hash::sha256;
+use cryptal::primitives::U256;
 
 use std::cmp::Ordering;
 use std::net::IpAddr;

@@ -4,8 +4,8 @@ use crate::structures::array::keep_lowest_array_by;
 use crate::{ALPHA, KUSIZE, N_BUCKETS, SMALL_BUCKET_COUNT};
 
 use core::array;
-use cryptography::U256;
-use cryptography::hash::sha256;
+use cryptal::hash::sha256;
+use cryptal::primitives::U256;
 
 pub struct Node {
     pub id: U256,
