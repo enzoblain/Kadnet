@@ -1,3 +1,8 @@
-[workspace]
-members = ["core", "client", "sdk"]
-resolver = "2"
+[package]
+name = "kadnet"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+cryptal = { git = "https://github.com/Nebula-ecosystem/Cryptal" }
+cadentis = { git = "https://github.com/Nebula-ecosystem/Cadentis", package = "cadentis" }
