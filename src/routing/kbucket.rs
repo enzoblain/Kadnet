@@ -1,7 +1,7 @@
-use crate::routing::errors::BucketErrors;
-
 use super::entry::NodeEntry;
+use super::errors::BucketErrors;
 
+use cryptal::primitives::U256;
 use std::collections::VecDeque;
 
 pub(crate) enum InsertDecision {
@@ -55,5 +55,29 @@ impl KBucket {
 
     pub(crate) fn force_insert(&mut self, entry: NodeEntry) {
         self.entries.push_back(entry);
+    }
+
+    pub(crate) fn select_n_closests(&self, n: usize, target: U256) -> Vec<NodeEntry> {
+        let mut out = Vec::with_capacity(n);
+
+        for item in self.entries.iter() {
+            let mut computed = item.clone();
+            computed.compute_score(target);
+
+            let pos = out
+                .iter()
+                .position(|ne: &NodeEntry| computed.score < ne.score)
+                .unwrap_or(out.len());
+
+            if pos < n {
+                if out.len() == n {
+                    out.pop();
+                }
+
+                out.insert(pos, *item);
+            }
+        }
+
+        out
     }
 }

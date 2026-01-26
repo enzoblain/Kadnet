@@ -1,6 +1,6 @@
 use super::errors::NodeError;
 use crate::routing::RoutingTable;
-use crate::routing::id::{IdError, generate_id};
+use crate::routing::id::generate_id;
 
 use cryptal::keys::ed25519;
 use cryptal::primitives::U256;

@@ -1,6 +1,6 @@
 use super::entry::NodeEntry;
 use super::kbucket::{InsertDecision, KBucket};
-use crate::consts::{KUSIZE, N_BUCKETS, SMALL_BUCKET_COUNT, T_MAX_MS};
+use crate::consts::{ALPHA, KUSIZE, N_BUCKETS, PING_MAX_RETRY, SMALL_BUCKET_COUNT, T_MAX_MS};
 use crate::routing::errors::RoutingErrors;
 
 use cadentis::time::timeout;
@@ -40,7 +40,7 @@ impl RoutingTable {
 
         match self.buckets[bucket_id].try_insert(entry) {
             InsertDecision::PingOldest(oldest) => {
-                let ping = retry(3, async move || {
+                let ping = retry(PING_MAX_RETRY, async move || {
                     timeout(Duration::from_micros(T_MAX_MS), async {
                         {
                             // ping the node: Network.ping(entry.id)
@@ -73,5 +73,43 @@ impl RoutingTable {
         }
 
         Some(N_BUCKETS - 1 - distance.leading_zeros() as usize)
+    }
+
+    pub(crate) fn get_closests(&mut self, target: U256) -> Vec<NodeEntry> {
+        let bucket_number = self.find_corresponding_bucket(target).unwrap_or(0);
+
+        let mut closests = self.buckets[bucket_number].select_n_closests(ALPHA, target);
+
+        if closests.len() == ALPHA {
+            return closests;
+        }
+
+        for d in 1..N_BUCKETS {
+            let left = bucket_number as isize - d as isize;
+            let right = bucket_number + d;
+
+            if left >= 0 {
+                let mut other_closests =
+                    self.buckets[left as usize].select_n_closests(ALPHA, target);
+                closests.append(&mut other_closests);
+            }
+
+            if closests.len() >= ALPHA {
+                break;
+            }
+
+            if right < N_BUCKETS {
+                let mut other_closests = self.buckets[right].select_n_closests(ALPHA, target);
+                closests.append(&mut other_closests);
+            }
+
+            if closests.len() >= ALPHA {
+                break;
+            }
+        }
+
+        closests.truncate(ALPHA);
+
+        closests
     }
 }
