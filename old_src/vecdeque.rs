@@ -1,39 +1,4 @@
-use std::cmp::Ordering;
-use std::collections::VecDeque;
-
-pub(crate) struct SizedVecDeque<T> {
-    inner: VecDeque<T>,
-}
-
 impl<T> SizedVecDeque<T> {
-    pub(crate) fn new(size: usize) -> Self {
-        SizedVecDeque {
-            inner: VecDeque::with_capacity(size),
-        }
-    }
-
-    fn len(&self) -> usize {
-        self.inner.len()
-    }
-
-    fn is_full(&self) -> bool {
-        self.len() == self.inner.capacity()
-    }
-
-    fn is_empty(&self) -> bool {
-        self.inner.is_empty()
-    }
-
-    pub(crate) fn insert(&mut self, value: T) -> Result<(), ()> {
-        if self.is_full() {
-            return Err(());
-        }
-
-        self.inner.push_front(value);
-
-        Ok(())
-    }
-
     pub(crate) fn select_n_first_by(
         &self,
         n: usize,
