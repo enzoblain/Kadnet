@@ -1,13 +1,11 @@
 use super::entry::NodeEntry;
 use super::kbucket::{InsertDecision, KBucket};
-use crate::consts::{ALPHA, KUSIZE, N_BUCKETS, PING_MAX_RETRY, SMALL_BUCKET_COUNT, T_MAX_MS};
-use crate::routing::errors::RoutingErrors;
+use crate::consts::{ALPHA, KUSIZE, N_BUCKETS, SMALL_BUCKET_COUNT};
+use crate::network;
+use crate::routing::errors::RoutingError;
 
-use cadentis::time::timeout;
-use cadentis::tools::retry;
 use cryptal::primitives::U256;
 use std::array;
-use std::time::Duration;
 
 pub(crate) struct RoutingTable {
     local_id: U256,
@@ -32,29 +30,22 @@ impl RoutingTable {
         }
     }
 
-    pub(crate) async fn insert(&mut self, entry: NodeEntry) -> Result<(), RoutingErrors> {
+    pub(crate) async fn insert(&mut self, entry: NodeEntry) -> Result<(), RoutingError> {
         let bucket_id = match self.find_corresponding_bucket(entry.id) {
             Some(bi) => bi,
-            None => return Err(RoutingErrors::SelfNode),
+            None => return Err(RoutingError::SelfNode),
         };
 
         match self.buckets[bucket_id].try_insert(entry) {
             InsertDecision::PingOldest(oldest) => {
-                let ping = retry(PING_MAX_RETRY, async move || {
-                    timeout(Duration::from_micros(T_MAX_MS), async {
-                        {
-                            // ping the node: Network.ping(entry.id)
-                        }
-                    })
+                let ping = network::ping(oldest.addr)
                     .await
-                })
-                .set_interval(Duration::from_micros(200))
-                .await;
+                    .map_err(RoutingError::NetworkError);
 
                 if ping.is_err() {
                     let _ = self.buckets[bucket_id]
                         .remove(oldest)
-                        .map_err(RoutingErrors::BucketError);
+                        .map_err(RoutingError::BucketError);
                     self.buckets[bucket_id].force_insert(entry);
                 }
 

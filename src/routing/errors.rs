@@ -1,8 +1,14 @@
-pub(crate) enum RoutingErrors {
+use crate::network::errors::NetworkError;
+
+#[allow(dead_code)]
+#[derive(Debug)]
+pub(crate) enum RoutingError {
     SelfNode,
-    BucketError(BucketErrors),
+    BucketError(BucketError),
+    NetworkError(NetworkError),
 }
 
-pub(crate) enum BucketErrors {
+#[derive(Debug)]
+pub(crate) enum BucketError {
     NodeNotFound,
 }

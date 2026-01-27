@@ -4,3 +4,4 @@ pub(crate) mod errors;
 
 pub use builder::NodeBuilder;
 pub use core::Node;
+pub use errors::NodeError;

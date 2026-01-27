@@ -1,3 +1,4 @@
+pub(crate) mod network;
 pub mod node;
 pub(crate) mod routing;
 

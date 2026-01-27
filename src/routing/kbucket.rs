@@ -1,5 +1,5 @@
 use super::entry::NodeEntry;
-use super::errors::BucketErrors;
+use super::errors::BucketError;
 
 use cryptal::primitives::U256;
 use std::collections::VecDeque;
@@ -43,13 +43,13 @@ impl KBucket {
         }
     }
 
-    pub(crate) fn remove(&mut self, entry: NodeEntry) -> Result<(), BucketErrors> {
+    pub(crate) fn remove(&mut self, entry: NodeEntry) -> Result<(), BucketError> {
         if let Some(position) = self.entries.iter().position(|ne| ne.id == entry.id) {
             self.entries.remove(position).unwrap();
 
             Ok(())
         } else {
-            Err(BucketErrors::NodeNotFound)
+            Err(BucketError::NodeNotFound)
         }
     }
 
@@ -61,7 +61,7 @@ impl KBucket {
         let mut out = Vec::with_capacity(n);
 
         for item in self.entries.iter() {
-            let mut computed = item.clone();
+            let mut computed = *item;
             computed.compute_score(target);
 
             let pos = out

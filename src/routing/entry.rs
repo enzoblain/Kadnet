@@ -1,14 +1,15 @@
-use std::net::IpAddr;
-use std::time::Duration;
+use crate::consts::{DISTANCE_WEIGHT_SHIFT, T_MAX_MS};
+use crate::network;
+use crate::network::errors::NetworkError;
 
 use cryptal::primitives::U256;
-
-use crate::consts::{DISTANCE_WEIGHT_SHIFT, T_MAX_MS};
+use std::net::SocketAddr;
+use std::time::Duration;
 
 #[derive(Clone, Copy)]
 pub(crate) struct NodeEntry {
     pub(crate) id: U256,
-    pub(crate) addr: IpAddr,
+    pub(crate) addr: SocketAddr,
 
     pub(crate) score: U256,
     pub(crate) respond_time: Duration,
@@ -16,6 +17,18 @@ pub(crate) struct NodeEntry {
 }
 
 impl NodeEntry {
+    pub(crate) async fn new(id: U256, addr: SocketAddr) -> Result<Self, NetworkError> {
+        let respond_time = network::ping(addr).await?;
+
+        Ok(Self {
+            id,
+            addr,
+            score: U256::ZERO,
+            respond_time,
+            distance: U256::ZERO,
+        })
+    }
+
     pub(crate) fn distance(&self, target: U256) -> U256 {
         self.id ^ target
     }
