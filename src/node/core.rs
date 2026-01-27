@@ -1,14 +1,15 @@
 use super::errors::NodeError;
-use crate::network::tcp;
+use crate::network::rpc::Rpc;
+use crate::network::tcp::{self, send_rpc};
 use crate::routing::RoutingTable;
 use crate::routing::entry::NodeEntry;
 use crate::routing::id::generate_id;
 
-use cadentis::select;
+use cadentis::sync::Mutex;
+use cadentis::{select, task};
 use cryptal::keys::ed25519;
 use cryptal::primitives::U256;
 use std::net::SocketAddr;
-use std::sync::Mutex;
 use std::sync::mpsc::{Receiver, channel};
 
 pub struct Node {
@@ -46,12 +47,11 @@ impl Node {
         Ok(())
     }
 
-    #[allow(clippy::await_holding_lock)]
     pub(crate) async fn add_node(&self, receiver: Receiver<(U256, SocketAddr)>) {
         while let Ok((id, addr)) = receiver.recv() {
             let entry = NodeEntry::new(id, addr).await.unwrap();
 
-            let mut routing = self.routing.lock().unwrap();
+            let mut routing = self.routing.lock().await;
 
             routing.insert(entry).await.unwrap();
         }
@@ -59,9 +59,24 @@ impl Node {
 
     pub(crate) async fn search_node(&self, receiver: Receiver<U256>) {
         while let Ok(id) = receiver.recv() {
-            let mut routing = self.routing.lock().unwrap();
+            let mut routing = self.routing.lock().await;
 
-            routing.get_closests(id);
+            let closests = routing.get_closests(id);
+            if closests[0].id != id {
+                let rpc = Rpc::Search(id);
+
+                let handles: Vec<_> = closests
+                    .into_iter()
+                    .map(|node| {
+                        let rpc_clone = rpc.clone();
+                        task::spawn(async move { send_rpc(node.addr, rpc_clone).await })
+                    })
+                    .collect();
+
+                for handle in handles {
+                    let _ = handle.await;
+                }
+            }
         }
     }
 

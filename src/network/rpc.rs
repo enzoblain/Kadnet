@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use cryptal::primitives::U256;
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone)]
 pub(crate) enum Rpc {
     Ping,
     Pong,
