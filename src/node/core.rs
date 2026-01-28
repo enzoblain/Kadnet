@@ -5,12 +5,16 @@ use crate::routing::RoutingTable;
 use crate::routing::entry::NodeEntry;
 use crate::routing::id::generate_id;
 
+use cadentis::select;
 use cadentis::sync::Mutex;
-use cadentis::{select, task};
+use cadentis::task::JoinSet;
+use cadentis::time::sleep;
 use cryptal::keys::ed25519;
 use cryptal::primitives::U256;
 use std::net::SocketAddr;
 use std::sync::mpsc::{Receiver, channel};
+use std::sync::{Arc, OnceLock};
+use std::time::Duration;
 
 pub struct Node {
     pub(crate) listenning_port: u16,
@@ -65,17 +69,24 @@ impl Node {
             if closests[0].id != id {
                 let rpc = Rpc::Search(id);
 
-                let handles: Vec<_> = closests
-                    .into_iter()
-                    .map(|node| {
-                        let rpc_clone = rpc.clone();
-                        task::spawn(async move { send_rpc(node.addr, rpc_clone).await })
-                    })
-                    .collect();
+                let addr = Arc::new(OnceLock::new());
+                let mut set = JoinSet::new();
 
-                for handle in handles {
-                    let _ = handle.await;
-                }
+                let discover_node =
+                    async |res: Arc<OnceLock<_>>, addr, rpc| match send_rpc(addr, rpc).await {
+                        Ok(Rpc::Search(a)) => res.set(a).unwrap(),
+                        _ => {
+                            sleep(Duration::from_secs(100000));
+                        }
+                    };
+
+                closests.into_iter().for_each(|node| {
+                    let rpc_clone = rpc.clone();
+                    let addr_clone = addr.clone();
+                    set.spawn(discover_node(addr_clone, node.addr, rpc_clone));
+                });
+
+                let _ = set.race_n(1).await;
             }
         }
     }
